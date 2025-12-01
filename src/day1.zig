@@ -77,11 +77,7 @@ pub fn main() !void {
             std.debug.print("Invalid: {s}\n", .{trimmed_line});
             continue;
         };
-        std.debug.print("---------------\n", .{});
-        std.debug.print("dir={s}  amount={d}  pos={d}\n", .{ @tagName(parsed.dir), parsed.amount, dial.position });
         dial.rotate(parsed.dir, parsed.amount);
-        std.debug.print("new position         pos={d}\n", .{dial.position});
-        std.debug.print("---------------\n", .{});
         _ = try reader.take(1);
     } else |err| switch (err) {
         error.EndOfStream => {},
