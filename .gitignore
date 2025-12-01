@@ -1,0 +1,4 @@
+zig-out/
+.DS_Store
+.git/
+.zig-cache/
