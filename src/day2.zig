@@ -12,7 +12,7 @@ const Range = struct {
         var invalid = std.ArrayList(u128).empty;
         var cur = self.start;
         while (cur <= self.end) {
-            if (try isInvalidId(cur)) {
+            if (isInvalidIdNew(cur)) {
                 try invalid.append(allocator, cur);
             }
             cur += 1;
@@ -21,6 +21,62 @@ const Range = struct {
         return invalid.toOwnedSlice(allocator);
     }
 };
+
+fn numberToDigits(n: u128, out: *[40]u8) []const u8 {
+    var x = n;
+    var len: usize = 0;
+
+    if (x == 0) {
+        out[0] = 0;
+        return out[0..1];
+    }
+
+    while (x > 0) : (x /= 10) {
+        const casted: u8 = @intCast(x % 10);
+        out[len] = casted;
+        len += 1;
+    }
+
+    std.mem.reverse(u8, out[0..len]);
+    return out[0..len];
+}
+fn computePrefixFunction(digits: []const u8, pi: []usize) void {
+    const n = digits.len;
+    pi[0] = 0;
+
+    var i: usize = 1;
+    var j: usize = 0;
+
+    while (i < n) : (i += 1) {
+        while (j > 0 and digits[i] != digits[j]) {
+            j = pi[j - 1];
+        }
+        if (digits[i] == digits[j]) {
+            j += 1;
+        }
+        pi[i] = j;
+    }
+}
+fn isPeriodicDigits(digits: []const u8) bool {
+    const n = digits.len;
+    if (n <= 1) return false;
+
+    var pi_buf: [40]usize = undefined;
+    const pi = pi_buf[0..n];
+
+    computePrefixFunction(digits, pi);
+
+    const longest = pi[n - 1];
+    const period = n - longest;
+
+    return longest > 0 and (n % period == 0);
+}
+// This is the optimal answer with backtracking
+fn isInvalidIdNew(n: u128) bool {
+    var buf: [40]u8 = undefined;
+    const digits = numberToDigits(n, &buf);
+    return isPeriodicDigits(digits);
+}
 
 // This was the answer to the first part of the question
 fn isInvalidIdStrOld(id_str: []const u8) bool {
