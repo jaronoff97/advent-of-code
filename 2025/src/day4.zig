@@ -3,37 +3,35 @@ const std = @import("std");
 const input_bytes = @embedFile("day4input.txt");
 const boardSize = 140;
 
-const State = enum {
-    Empty,
-    Occupied,
-    Accessible,
-};
+const Empty: u2 = 0;
+const Occupied: u2 = 1;
+const Accessible: u2 = 2;
 
-fn stateFromChar(char: u8) State {
+fn stateFromChar(char: u8) u2 {
     return switch (char) {
-        '@' => State.Occupied,
-        else => State.Empty,
+        '@' => Occupied,
+        else => Empty,
     };
 }
 
-fn printBoard(toiletPaperLocs: *[boardSize][boardSize]State) void {
+fn printBoard(toiletPaperLocs: *[boardSize][boardSize]u2) void {
     for (toiletPaperLocs) |row| {
         for (row) |cell| {
             switch (cell) {
-                State.Empty => std.debug.print(".", .{}),
-                State.Occupied => std.debug.print("@", .{}),
-                State.Accessible => std.debug.print("x", .{}),
+                Empty => std.debug.print(".", .{}),
+                Occupied => std.debug.print("@", .{}),
+                Accessible => std.debug.print("x", .{}),
             }
         }
         std.debug.print("\n", .{});
     }
 }
 
-fn countAccessible(toiletPaperLocs: *[boardSize][boardSize]State) usize {
+fn countAccessible(toiletPaperLocs: *[boardSize][boardSize]u2) usize {
     var count: usize = 0;
     for (toiletPaperLocs) |row| {
         for (row) |cell| {
-            if (cell == State.Accessible) {
+            if (cell == Accessible) {
                 count += 1;
             }
         }
@@ -41,20 +39,21 @@ fn countAccessible(toiletPaperLocs: *[boardSize][boardSize]State) usize {
     return count;
 }
 
-fn removeAccessible(toiletPaperLocs: *[boardSize][boardSize]State) usize {
+fn removeAccessible(toiletPaperLocs: *[boardSize][boardSize]u2) usize {
     var count: usize = 0;
     for (toiletPaperLocs, 0..) |row, rowIndex| {
         for (row, 0..) |cell, colIndex| {
-            if (cell == State.Accessible) {
+            if (cell == Accessible) {
                 count += 1;
-                toiletPaperLocs[rowIndex][colIndex] = State.Empty;
+                toiletPaperLocs[rowIndex][colIndex] = Empty;
             }
         }
     }
     return count;
 }
 
-fn setAccessible(toiletPaperLocs: *[boardSize][boardSize]State, row: usize, col: usize) void {
+/// Set a cell to Accessible if it is occupied and has less than 4 occupied neighbors.
+inline fn setAccessible(toiletPaperLocs: *[boardSize][boardSize]u2, row: usize, col: usize) void {
     var count: usize = 0;
     const left = if (col == 0) 0 else col - 1;
     const right = if (col == boardSize - 1) boardSize - 1 else col + 1;
@@ -64,13 +63,14 @@ fn setAccessible(toiletPaperLocs: *[boardSize][boardSize]State, row: usize, col:
     for (top..bottom + 1) |r| {
         for (left..right + 1) |c| {
             if (r == row and c == col) continue;
-            if (toiletPaperLocs[r][c] == State.Occupied or toiletPaperLocs[r][c] == State.Accessible) {
+            if (toiletPaperLocs[r][c] != Empty) {
                 count += 1;
             }
         }
     }
-    if (count < 4 and toiletPaperLocs[row][col] == State.Occupied) {
-        toiletPaperLocs[row][col] = State.Accessible;
+    if (count < 4 and toiletPaperLocs[row][col] == Occupied) {
+        toiletPaperLocs[row][col] = Accessible;
+        return;
     }
     return;
 }
@@ -80,7 +80,7 @@ pub fn main() !void {
     // This is part 1.
     var toiletPaperLocs = comptime blk: {
         var it = std.mem.splitScalar(u8, input_bytes, '\n');
-        var toiletPaperLocs: [boardSize][boardSize]State = undefined;
+        var toiletPaperLocs: [boardSize][boardSize]u2 = undefined;
         var rowIter: usize = 0;
 
         while (it.next()) |raw_line| {
